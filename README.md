@@ -9,3 +9,4 @@ You will need to install the following pip packages:
 - python-dotenv
 - requests
 - urllib3
+- pillow
