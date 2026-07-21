@@ -10,3 +10,5 @@ You will need to install the following pip packages:
 - requests
 - urllib3
 - pillow
+
+Make sure to invite the bot to your server and it should then work!
