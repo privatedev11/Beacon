@@ -4,7 +4,7 @@
 version = "26.07.1"
 import discord
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands, ui
 import os
 from dotenv import load_dotenv
 import requests
@@ -120,7 +120,10 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
         # Catch any send failures so the error handler itself never crashes
         print(f"Failed to send error response to user: {e}")
 
-
+# One day we can integrate a modal to automatically create a GitHub issue
+@client.tree.command(name="issue", description="Report an issue to the developers!", guild=GUILD_ID)
+async def issueReportCommand(interaction=discord.Interaction):
+    await interaction.response.send_message("Sorry to hear you've encountered a problem with Beacon! You can create an issue on the GitHub repository: https://github.com/privatedev11/Beacon/issues", ephemeral=True)
 
 token = os.getenv("DISCORD_TOKEN")
 client.run(token)
