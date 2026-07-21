@@ -7,3 +7,5 @@ You will need to create a `.env` file with the `DISCORD_TOKEN` variable equal to
 You will need to install the following pip packages:
 - discord
 - python-dotenv
+- requests
+- urllib3
