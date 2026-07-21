@@ -12,6 +12,7 @@ import urllib
 import base64
 from PIL import Image
 import io
+import datetime
 
 load_dotenv()
 
@@ -53,6 +54,14 @@ async def aboutCmd(interaction: discord.Interaction):
 
 @client.tree.command(name="getserverinfo", description="Gets info about a Minecraft server.", guild=GUILD_ID)
 async def serverInfoCmd(interaction: discord.Interaction, host: str):
+    await interaction.response.defer()
+    aternosText = None
+    if "aternos.me" in host:
+        aternosText = (
+            "**Important for Aternos servers**\n"
+            "Due to the nature of how Aternos processes server data, some information reported by the bot may be incorrect, for example, showing the server as being online even if it isn't.\n"
+            "For more information, see section 11 of https://mcstatus.io/about."
+        )
     mcServerSearch = requests.get(f"https://api.mcstatus.io/v2/status/java/{host}")
     mcServerSearchJson = mcServerSearch.json()
     
@@ -61,9 +70,9 @@ async def serverInfoCmd(interaction: discord.Interaction, host: str):
     playersOnline = mcServerSearchJson.get("players", {}).get("online")
     maxPlayers = mcServerSearchJson.get("players", {}).get("max")
     
+    # The API returns images as Base64, which means I have to do this fuckery for it to display.
     iconBase64 = mcServerSearchJson.get("icon")
     
-    # Initialize iconFile as None first!
     iconFile = None
 
     if iconBase64:
@@ -74,23 +83,44 @@ async def serverInfoCmd(interaction: discord.Interaction, host: str):
         imageBuffer = io.BytesIO(imageBytes)
         iconFile = discord.File(fp=imageBuffer, filename="icon.png")
 
-    messageContent = (
-        f"Server online: {onlineStatus}\n"
-        f"MOTD: {motd}\n"
-        f"Server Address: {host}\n"
-        f"Players Online: {playersOnline}/{maxPlayers}"
+    serverInfoCmdEmbed = discord.Embed(
+    color=3447003,
+    title="Server Information",
+    description=f"Server Online?: {onlineStatus}\nMOTD: {motd}\nHost: {host}\nPlayers Online: {playersOnline}/{maxPlayers}",
+    timestamp=datetime.datetime.now(),
+)
+    serverInfoCmdEmbed.set_thumbnail(url="attachment://icon.png")
+    serverInfoCmdEmbed.set_footer(
+        text="Provided by Beacon and mcstatus.io",
     )
 
     if iconFile:
-        await interaction.response.send_message(messageContent, file=iconFile)
+        await interaction.followup.send(content=aternosText, embed=serverInfoCmdEmbed, file=iconFile)
+    # This is required as otherwise servers with no image return an error.
     else:
-        await interaction.response.send_message(messageContent)
+       await interaction.followup.send(content=aternosText, embed=serverInfoCmdEmbed)
+# This might work? AI helped with this part unfortunately
 @client.tree.error
 async def on_app_command_error(interaction: discord.Interaction, error: app_commands.AppCommandError):
-    if isinstance(error, app_commands.errors.CommandInvokeError):
-        await interaction.response.send_message("Error 404 returned when checking server data. If your server link was by a free hosting provider such as Aternos, this could be why. If not, make an issue on the GitHub: https://github.com/privatedev11/Beacon/issues", ephemeral=True)
-    else:
-        print(f"ERROR: Unhandled error when running /getserverinfo: {error}")
+    print(f"ERROR: {error}")
+
+    serverInfoCmdErrorMsg = (
+        "Error returned when checking server data. "
+        "If your server link was by a free hosting provider such as Aternos, this could be why. "
+        "If not, make an issue on the GitHub: https://github.com/privatedev11/Beacon/issues"
+    )
+
+    try:
+        # Check if response was already deferred or sent
+        if interaction.response.is_done():
+            await interaction.followup.send(serverInfoCmdErrorMsg, ephemeral=True)
+        else:
+            await interaction.response.send_message(serverInfoCmdErrorMsg, ephemeral=True)
+    except Exception as e:
+        # Catch any send failures so the error handler itself never crashes
+        print(f"Failed to send error response to user: {e}")
+
+
 
 token = os.getenv("DISCORD_TOKEN")
 client.run(token)
