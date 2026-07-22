@@ -14,7 +14,7 @@ __pycache__/
 *$py.class
 *.pyc
 
-# Logs & Database (if we later use local SQLite)
+# Logs & Database (if we later use local SQLite, I think we should)
 *.log
 *.db
 *.sqlite3
