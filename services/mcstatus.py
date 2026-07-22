@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Optional
 
 from mcstatus import JavaServer
-from mcstatus.bedrock import BedrockServer
 import re
 
 MINECRAFT_FORMATTING = re.compile(r"§[0-9a-fk-or]", re.IGNORECASE)
@@ -33,8 +32,6 @@ def _clean_motd(motd) -> Optional[str]:
 @dataclass
 class ServerStatus:
     online: bool
-    is_server: bool
-    edition: Optional[str]
     motd: Optional[str]
     players_online: Optional[int]
     players_max: Optional[int]
@@ -62,9 +59,6 @@ def _cache_icon(host: str, icon: bytes) -> io.BytesIO:
 
 
 async def fetch_server_status(host: str) -> ServerStatus:
-    is_aternos = "aternos.me" in host
-
-    # try Java edition
     try:
         server = await JavaServer.async_lookup(host)
         status = await server.async_status()
@@ -79,42 +73,19 @@ async def fetch_server_status(host: str) -> ServerStatus:
 
         return ServerStatus(
             online=True,
-            is_server=True,
-            edition="java",
             motd=_clean_motd(status.description),
             players_online=status.players.online,
             players_max=status.players.max,
             icon_bytes=icon_bytes,
-            is_aternos=is_aternos
+            is_aternos="aternos.me" in host,
         )
 
     except Exception:
-        pass
-
-    try:
-        server = BedrockServer (host, port)
-        status = await server. async_status ()
-            
-        return ServerStatus(
-            online=True,
-            is_server=True,
-            edition="bedrock",
-            motd=_clean_motd (status. motd),
-            players_online=status.players_online,
-            players_max=status.players_max,
-            icon_bytes=None, # Bedrock does not provide server icons here
-            is_aternos=is_aternos,
-        except Exception:
-            pass
-            
-            # Not a Minecraft server / unreachable
         return ServerStatus(
             online=False,
-            is_server=False,
-            edition=None,
             motd=None,
             players_online=None,
             players_max=None,
             icon_bytes=None,
-            is_aternos=is_aternos,
-                    
+            is_aternos="aternos.me" in host,
+        )
