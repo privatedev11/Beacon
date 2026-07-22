@@ -7,12 +7,27 @@ from dataclasses import dataclass
 from typing import Optional
 
 from mcstatus import JavaServer
+import re
 
+MINECRAFT_FORMATTING = re.compile(r"§[0-9a-fk-or]", re.IGNORECASE)
 ICON_CACHE_TTL = 60 * 60 * 24  # 24 hours
 
 # host -> (expires_at, icon_bytes)
 _icon_cache: dict[str, tuple[float, bytes]] = {}
 
+
+def _clean_motd(motd) -> Optional[str]:
+    if motd is None:
+        return None
+
+    # mcstatus may return a Description object
+    if hasattr(motd, "to_plain"):
+        motd = motd.to_plain()
+
+    elif not isinstance(motd, str):
+        motd = str(motd)
+
+    return MINECRAFT_FORMATTING.sub("", motd)
 
 @dataclass
 class ServerStatus:
@@ -58,7 +73,7 @@ async def fetch_server_status(host: str) -> ServerStatus:
 
         return ServerStatus(
             online=True,
-            motd=status.description,
+            motd=_clean_motd(status.description),
             players_online=status.players.online,
             players_max=status.players.max,
             icon_bytes=icon_bytes,
