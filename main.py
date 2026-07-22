@@ -16,6 +16,7 @@ EXTENSIONS = [
     "cogs.server",
     "cogs.hosts",
     "cogs.issues",
+    "cogs.commands",
 ]
 
 
