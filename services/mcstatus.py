@@ -1,13 +1,13 @@
-# Wraps calls to Minecraft servers using the mcstatus package.
+# Wraps calls to Minecraft servers (Java & Bedrock) using the mcstatus package.
 
 import base64
 import io
+import re
 import time
 from dataclasses import dataclass
 from typing import Optional
 
-from mcstatus import JavaServer
-import re
+from mcstatus import BedrockServer, JavaServer
 
 MINECRAFT_FORMATTING = re.compile(r"§[0-9a-fk-or]", re.IGNORECASE)
 ICON_CACHE_TTL = 60 * 60 * 24  # 24 hours
@@ -20,10 +20,8 @@ def _clean_motd(motd) -> Optional[str]:
     if motd is None:
         return None
 
-    # mcstatus may return a Description object
     if hasattr(motd, "to_plain"):
         motd = motd.to_plain()
-
     elif not isinstance(motd, str):
         motd = str(motd)
 
@@ -32,6 +30,7 @@ def _clean_motd(motd) -> Optional[str]:
 @dataclass
 class ServerStatus:
     online: bool
+    edition: Optional[str]  # "java", "bedrock", or None if offline
     motd: Optional[str]
     players_online: Optional[int]
     players_max: Optional[int]
@@ -59,13 +58,14 @@ def _cache_icon(host: str, icon: bytes) -> io.BytesIO:
 
 
 async def fetch_server_status(host: str) -> ServerStatus:
+    is_aternos = "aternos.me" in host.lower()
     try:
         server = await JavaServer.async_lookup(host)
         status = await server.async_status()
 
         icon_bytes = _get_cached_icon(host)
 
-        if icon_bytes is None and status.icon:
+        if icon_bytes is None and getattr(status, "icon", None):
             icon = base64.b64decode(
                 status.icon.removeprefix("data:image/png;base64,")
             )
@@ -73,19 +73,36 @@ async def fetch_server_status(host: str) -> ServerStatus:
 
         return ServerStatus(
             online=True,
+            edition="java",
             motd=_clean_motd(status.description),
             players_online=status.players.online,
             players_max=status.players.max,
             icon_bytes=icon_bytes,
-            is_aternos="aternos.me" in host,
+            is_aternos=is_aternos,
         )
-
     except Exception:
+        pass
+    try:
+        bedrock_server = BedrockServer.lookup(host)
+        status = await bedrock_server.async_status()
+
         return ServerStatus(
-            online=False,
-            motd=None,
-            players_online=None,
-            players_max=None,
+            online=True,
+            edition="bedrock",
+            motd=_clean_motd(status.motd),
+            players_online=status.players.online,
+            players_max=status.players.max,
             icon_bytes=None,
-            is_aternos="aternos.me" in host,
+            is_aternos=is_aternos,
         )
+    except Exception:
+        pass
+    return ServerStatus(
+        online=False,
+        edition=None,
+        motd=None,
+        players_online=None,
+        players_max=None,
+        icon_bytes=None,
+        is_aternos=is_aternos,
+    )
