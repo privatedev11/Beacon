@@ -27,9 +27,6 @@ class Client(commands.Bot):
             await self.load_extension(extension)
             print(f"loaded extension {extension}")
 
-        for extension in EXTENSIONS:
-            await self.load_extension(extension)
-
         print(self.tree.get_commands())
         print(self.tree.get_commands(guild=discord.Object(id=GUILD_ID)))
 
