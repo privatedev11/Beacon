@@ -12,11 +12,10 @@ from config import DISCORD_TOKEN, GUILD_ID
 from storage.db import init_db
 
 EXTENSIONS = [
-    "cogs.about",
+    "cogs.utility",
     "cogs.server",
     "cogs.hosts",
     "cogs.issues",
-    "cogs.commands",
 ]
 
 
