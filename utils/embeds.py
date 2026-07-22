@@ -21,7 +21,7 @@ def build_server_embed(host: str, status: ServerStatus) -> tuple[discord.Embed, 
         ),
         timestamp=datetime.datetime.now(),
     )
-    embed.set_footer(text="Provided by Beacon and mcstatus.io")
+    embed.set_footer(text="Provided by Beacon")
 
     icon_file = None
     if status.icon_bytes:

@@ -1,0 +1,12 @@
+services:
+  bot:
+    build: .
+    container_name: beacon
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      LINEAR_API_KEY: ${LINEAR_API_KEY}
+    command: python main.py
