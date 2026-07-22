@@ -16,3 +16,4 @@ python-dotenv==1.2.2
 requests==2.31.0
 urllib3==2.7.0
 yarl==1.24.5
+mcstatus==14.0.0

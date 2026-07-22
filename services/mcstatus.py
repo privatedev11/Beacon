@@ -1,19 +1,22 @@
-# Wraps calls to api.mcstatus.io.
+# Wraps calls to Minecraft servers using the mcstatus package.
 
-import asyncio
 import base64
 import io
+import time
 from dataclasses import dataclass
 from typing import Optional
 
-import requests
+from mcstatus import JavaServer
 
-API_BASE = "https://api.mcstatus.io/v2/status/java"
+ICON_CACHE_TTL = 60 * 60 * 24  # 24 hours
+
+# host -> (expires_at, icon_bytes)
+_icon_cache: dict[str, tuple[float, bytes]] = {}
 
 
 @dataclass
 class ServerStatus:
-    online: Optional[bool]
+    online: bool
     motd: Optional[str]
     players_online: Optional[int]
     players_max: Optional[int]
@@ -21,33 +24,53 @@ class ServerStatus:
     is_aternos: bool
 
 
-def _fetch_sync(host: str) -> ServerStatus:
-    response = requests.get(f"{API_BASE}/{host}", timeout=10)
-    response.raise_for_status()
-    data = response.json()
+def _get_cached_icon(host: str) -> Optional[io.BytesIO]:
+    cached = _icon_cache.get(host)
+    if cached is None:
+        return None
 
-    online = data.get("online")
-    motd = data.get("motd", {}).get("clean")
-    players_online = data.get("players", {}).get("online")
-    players_max = data.get("players", {}).get("max")
+    expires_at, icon = cached
 
-    icon_bytes = None
-    icon_b64 = data.get("icon")
-    if icon_b64:
-        if "," in icon_b64:
-            icon_b64 = icon_b64.split(",")[1]
-        icon_bytes = io.BytesIO(base64.b64decode(icon_b64))
+    if expires_at <= time.time():
+        del _icon_cache[host]
+        return None
 
-    return ServerStatus(
-        online=online,
-        motd=motd,
-        players_online=players_online,
-        players_max=players_max,
-        icon_bytes=icon_bytes,
-        is_aternos="aternos.me" in host,
-    )
+    return io.BytesIO(icon)
+
+
+def _cache_icon(host: str, icon: bytes) -> io.BytesIO:
+    _icon_cache[host] = (time.time() + ICON_CACHE_TTL, icon)
+    return io.BytesIO(icon)
 
 
 async def fetch_server_status(host: str) -> ServerStatus:
-    """runs the blocking `requests` call in a thread"""
-    return await asyncio.to_thread(_fetch_sync, host)
+    try:
+        server = await JavaServer.async_lookup(host)
+        status = await server.async_status()
+
+        icon_bytes = _get_cached_icon(host)
+
+        if icon_bytes is None and status.icon:
+            icon = base64.b64decode(
+                status.icon.removeprefix("data:image/png;base64,")
+            )
+            icon_bytes = _cache_icon(host, icon)
+
+        return ServerStatus(
+            online=True,
+            motd=status.description,
+            players_online=status.players.online,
+            players_max=status.players.max,
+            icon_bytes=icon_bytes,
+            is_aternos="aternos.me" in host,
+        )
+
+    except Exception:
+        return ServerStatus(
+            online=False,
+            motd=None,
+            players_online=None,
+            players_max=None,
+            icon_bytes=None,
+            is_aternos="aternos.me" in host,
+        )
