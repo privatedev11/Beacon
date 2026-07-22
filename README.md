@@ -1,4 +1,10 @@
 # Beacon
+
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/privatedev11/Beacon)
+![GitHub last commit](https://img.shields.io/github/last-commit/privatedev11/Beacon)
+![GitHub License](https://img.shields.io/github/license/privatedev11/Beacon)
+![GitHub Repo stars](https://img.shields.io/github/stars/privatedev11/Beacon)
+
 A small Discord bot to display Minecraft server information
 
 # Running
