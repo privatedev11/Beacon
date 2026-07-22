@@ -19,7 +19,21 @@ class IssueModal(ui.Modal, title="Report an Issue"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        await self._submit(interaction, github_service)
+    success, result = await github_service.create_issue(
+        self.issue_title.value,
+        self.issue_description.value,
+    )
+
+    if success:
+        await interaction.response.send_message(
+            f"Issue created successfully!\n{result}",
+            ephemeral=True,
+        )
+    else:
+        await interaction.response.send_message(
+            f"Failed to create issue:\n{result}",
+            ephemeral=True,
+        )
 
 class Issues(commands.Cog):
     def __init__(self, bot: commands.Bot):
