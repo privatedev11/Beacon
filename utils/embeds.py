@@ -10,9 +10,16 @@ from services.mcstatus import ServerStatus
 
 
 def build_server_embed(host: str, status: ServerStatus) -> tuple[discord.Embed, Optional[discord.File]]:
+    if status.edition == "bedrock":
+        title="🟩 Minecraft Bedrock Server"
+    elif status.edition == "java":
+        title="🟦 Minecraft Java Server"
+    else:
+        title="Not a server?"
+    
     embed = discord.Embed(
         color=COLOR_SERVER,
-        title="Server Information",
+        title=title,
         description=(
             f"Server Online?: {status.online}\n"
             f"MOTD: {status.motd}\n"
