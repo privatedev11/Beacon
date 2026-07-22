@@ -27,6 +27,12 @@ class Client(commands.Bot):
             await self.load_extension(extension)
             print(f"loaded extension {extension}")
 
+        for extension in EXTENSIONS:
+            await self.load_extension(extension)
+
+        print(self.tree.get_commands())
+        print(self.tree.get_commands(guild=discord.Object(id=GUILD_ID)))
+
         guild = discord.Object(id=GUILD_ID)
         synced = await self.tree.sync(guild=guild)
         print(f"Synced {len(synced)} commands to guild {GUILD_ID}")
