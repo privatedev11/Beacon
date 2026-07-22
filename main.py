@@ -23,7 +23,9 @@ class Client(commands.Bot):
     async def setup_hook(self):
         init_db()
         for extension in EXTENSIONS:
+            print(f"loading extension {extension}")
             await self.load_extension(extension)
+            print(f"loaded extension {extension}")
 
         guild = discord.Object(id=GUILD_ID)
         synced = await self.tree.sync(guild=guild)
