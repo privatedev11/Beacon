@@ -24,6 +24,20 @@ class Server(commands.Cog):
     def cog_unload(self):
         self.refresh_watchers.cancel()
 
+    # ---------- helper methods ----------
+
+    async def check_minecraft_server(self, interaction: discord.Interaction, host: str):
+        status = await fetch_server_status(host)
+
+        if not status.is_server:
+            await interaction.followup.send(
+                f"❌ `{host}` does not appear to be a Minecraft server.",
+                ephemeral=True,
+            )
+            return None
+
+        return status
+
     # ---------- one-shot lookup ----------
 
     @app_commands.command(name="getserverinfo", description="Gets info about a Minecraft server.")
@@ -33,7 +47,8 @@ class Server(commands.Cog):
         await interaction.response.defer()
 
         resolved_host = resolve_host(interaction.guild_id, host) if interaction.guild_id else host
-        status = await fetch_server_status(resolved_host)
+        status = await check_minecraft_server(resolved_host)
+        if status is None: return
         embed, icon_file = build_server_embed(resolved_host, status)
 
         content = build_aternos_notice() if status.is_aternos else None
@@ -61,7 +76,8 @@ class Server(commands.Cog):
         await interaction.response.defer()
 
         resolved_host = resolve_host(interaction.guild_id, host) if interaction.guild_id else host
-        status = await fetch_server_status(resolved_host)
+        status = await check_minecraft_server(resolved_host)
+        if status is None: return
         embed, icon_file = build_server_embed(resolved_host, status)
         content = build_aternos_notice() if status.is_aternos else None
 
