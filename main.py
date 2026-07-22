@@ -1,5 +1,5 @@
 # Beacon - a small Discord bot to display Minecraft server information.
-# Copyright (C) 2026 PrivateMe
+# Copyright (C) 2026 Beacondev
 # This program is licenced under the GNU General Pu+blic Licence v3. If you did not recieve a copy of this licence with the program, please visit https://www.gnu.org/licenses/
 version = "26.07.1"
 import discord
@@ -47,7 +47,7 @@ async def aboutCmd(interaction: discord.Interaction):
 )
     aboutEmbed.set_thumbnail(url="https://i.postimg.cc/Pq4ckf86/Beacon-Logo.png")
     aboutEmbed.set_footer(
-        text="Copyright (C) 2026 PrivateMe.",
+        text="Copyright (C) 2026 Beacondev.",
         icon_url="https://i.postimg.cc/QNbkYjb4/New-PFP.jpg",
     )
     await interaction.response.send_message(embed=aboutEmbed, ephemeral=True)
