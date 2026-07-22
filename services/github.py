@@ -15,7 +15,7 @@ def _create_issue_sync(title: str, body: str) -> tuple[bool, str]:
         "Authorization": f"Bearer {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json",
     }
-    payload = {"title": title, "body": body}
+    payload = {"title": title, "body": body, "labels": ["automatic"]}
 
     response = requests.post(url, headers=headers, json=payload, timeout=10)
 
