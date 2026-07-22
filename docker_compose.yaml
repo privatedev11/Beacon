@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    container_name: beacon
+    volumes:
+      - .:/app
+    working_dir: /app
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+    command: python main.py
