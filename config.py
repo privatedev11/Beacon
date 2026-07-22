@@ -17,9 +17,6 @@ GUILD_ID = int(os.getenv("GUILD_ID", "1528725991273398342"))
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "privatedev11/Beacon")
 
-LINEAR_API_KEY = os.getenv("LINEAR_API_KEY")
-LINEAR_TEAM_ID = os.getenv("LINEAR_TEAM_ID")
-
 # --- Misc ---
 DB_PATH = os.getenv("BEACON_DB_PATH", "beacon.db")
 
