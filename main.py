@@ -56,7 +56,7 @@ async def on_app_command_error(interaction: discord.Interaction, error: app_comm
     error_msg = (
         "Something went wrong running that command. "
         "If it involved a server address (e.g. via a free host like Aternos), that may be why. "
-        "Otherwise, please open an issue: https://github.com/privatedev11/Beacon/issues"
+        "Otherwise, please report the problem by running `/issue`."
     )
 
     try:
