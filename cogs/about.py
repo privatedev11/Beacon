@@ -1,10 +1,10 @@
-# Just the /about command.
+# Commands to get info about the bot
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-from config import VERSION, COLOR_INFO
+from config import VERSION, COLOR_INFO, GITHUB_REPO
 
 
 class Utility(commands.Cog):
@@ -19,7 +19,7 @@ class Utility(commands.Cog):
             description=(
                 f"A small Discord bot to display Minecraft server information.\n"
                 f"Version {VERSION}\n"
-                f"For more information, check out the [Github repository](https://github.com/privatedev11/Beacon)."
+                f"For more information, check out the [Github repository](https://github.com/{GITHUB_REPO})."
             ),
         )
         embed.set_thumbnail(url="https://i.postimg.cc/Pq4ckf86/Beacon-Logo.png")
