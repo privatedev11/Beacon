@@ -29,9 +29,9 @@ class Server(commands.Cog):
     async def check_minecraft_server(self, interaction: discord.Interaction, host: str):
         status = await fetch_server_status(host)
 
-        if not status.is_server:
+        if not status.online:
             await interaction.followup.send(
-                f"❌ `{host}` does not appear to be a Minecraft server.",
+                f"❌ `{host}` either does not appear to be a Minecraft server or is not online.",
                 ephemeral=True,
             )
             return None
