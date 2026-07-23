@@ -42,13 +42,30 @@ def init_db() -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS watchers (
-            message_id     INTEGER PRIMARY KEY,
-            channel_id     INTEGER NOT NULL,
-            guild_id       INTEGER NOT NULL,
-            host           TEXT NOT NULL,
-            interval_mins  INTEGER NOT NULL,
-            last_updated   TEXT
+            message_id          INTEGER PRIMARY KEY,
+            channel_id          INTEGER NOT NULL,
+            guild_id            INTEGER NOT NULL,
+            host                TEXT NOT NULL,
+            interval_mins       INTEGER NOT NULL,
+            last_updated        TEXT,
+            ping_role_id        INTEGER,
+            last_status         TEXT,
+            last_ping_message_id INTEGER
         )
         """
     )
+    conn.commit()
+    _migrate_watchers_columns(conn)
+
+
+def _migrate_watchers_columns(conn) -> None:
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(watchers)")}
+    required = {
+        "ping_role_id": "INTEGER",
+        "last_status": "TEXT",
+        "last_ping_message_id": "INTEGER",
+    }
+    for column, col_type in required.items():
+        if column not in existing:
+            conn.execute(f"ALTER TABLE watchers ADD COLUMN {column} {col_type}")
     conn.commit()

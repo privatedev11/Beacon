@@ -3,6 +3,7 @@
 # same lookup, embed-building, and host-resolution logic.
 
 import datetime
+from typing import Optional
 
 import discord
 from discord import app_commands
@@ -49,9 +50,16 @@ class Server(commands.Cog):
     @app_commands.describe(
         host="A server address, or a saved shorthand from /addhost",
         interval="How often to refresh, in minutes (minimum 2)",
+        ping_role="Role to mention when the server's online/offline status changes",
     )
     @app_commands.autocomplete(host=host_autocomplete)
-    async def watchserver(self, interaction: discord.Interaction, host: str, interval: int = 5):
+    async def watchserver(
+        self,
+        interaction: discord.Interaction,
+        host: str,
+        interval: int = 5,
+        ping_role: Optional[discord.Role] = None,
+    ):
         if interval < MIN_WATCH_INTERVAL_MINUTES:
             await interaction.response.send_message(
                 f"Interval must be at least {MIN_WATCH_INTERVAL_MINUTES} minutes.", ephemeral=True
@@ -76,6 +84,8 @@ class Server(commands.Cog):
             guild_id=interaction.guild_id,
             host=resolved_host,
             interval_mins=interval,
+            ping_role_id=ping_role.id if ping_role else None,
+            last_status="online" if status.online else "offline",
         )
         watcher_storage.update_last_updated(message.id, datetime.datetime.now(datetime.timezone.utc).isoformat())
 
@@ -144,6 +154,33 @@ class Server(commands.Cog):
         watcher_storage.update_last_updated(
             watcher["message_id"], datetime.datetime.now(datetime.timezone.utc).isoformat()
         )
+
+        new_status = "online" if status.online else "offline"
+        if new_status != watcher["last_status"]:
+            await self._handle_status_change(watcher, message.channel, new_status)
+
+    async def _handle_status_change(self, watcher: dict, channel, new_status: str):
+        if watcher["ping_role_id"]:
+            old_ping_id = watcher["last_ping_message_id"]
+            if old_ping_id:
+                try:
+                    old_ping = await channel.fetch_message(old_ping_id)
+                    await old_ping.delete()
+                except discord.HTTPException:
+                    pass
+
+            try:
+                ping_message = await channel.send(
+                    f"<@&{watcher['ping_role_id']}> **{watcher['host']}** is now **{new_status}**."
+                )
+                new_ping_id = ping_message.id
+            except discord.HTTPException as e:
+                print(f"Failed to send status ping for watcher {watcher['message_id']}: {e}")
+                new_ping_id = watcher["last_ping_message_id"]
+        else:
+            new_ping_id = None
+
+        watcher_storage.update_status_ping(watcher["message_id"], new_status, new_ping_id)
 
     @refresh_watchers.before_loop
     async def before_refresh_watchers(self):
