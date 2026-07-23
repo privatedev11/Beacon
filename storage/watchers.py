@@ -14,14 +14,15 @@ def add_watcher(
     interval_mins: int,
     ping_role_id: Optional[int] = None,
     last_status: Optional[str] = None,
+    title: Optional[str] = None,
 ) -> None:
     conn = get_connection()
     conn.execute(
         """
-        INSERT INTO watchers (message_id, channel_id, guild_id, host, interval_mins, last_updated, ping_role_id, last_status)
-        VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+        INSERT INTO watchers (message_id, channel_id, guild_id, host, interval_mins, last_updated, ping_role_id, last_status, title)
+        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?)
         """,
-        (message_id, channel_id, guild_id, host, interval_mins, ping_role_id, last_status),
+        (message_id, channel_id, guild_id, host, interval_mins, ping_role_id, last_status, title),
     )
     conn.commit()
 

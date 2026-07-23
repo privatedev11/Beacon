@@ -50,7 +50,8 @@ def init_db() -> None:
             last_updated        TEXT,
             ping_role_id        INTEGER,
             last_status         TEXT,
-            last_ping_message_id INTEGER
+            last_ping_message_id INTEGER,
+            title               TEXT
         )
         """
     )
@@ -64,6 +65,7 @@ def _migrate_watchers_columns(conn) -> None:
         "ping_role_id": "INTEGER",
         "last_status": "TEXT",
         "last_ping_message_id": "INTEGER",
+        "title": "TEXT",
     }
     for column, col_type in required.items():
         if column not in existing:

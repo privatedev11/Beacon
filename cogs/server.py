@@ -51,6 +51,7 @@ class Server(commands.Cog):
         host="A server address, or a saved shorthand from /addhost",
         interval="How often to refresh, in minutes (minimum 2)",
         ping_role="Role to mention when the server's online/offline status changes",
+        title="Custom title for the embed (defaults to the server edition)",
     )
     @app_commands.autocomplete(host=host_autocomplete)
     async def watchserver(
@@ -59,6 +60,7 @@ class Server(commands.Cog):
         host: str,
         interval: int = 5,
         ping_role: Optional[discord.Role] = None,
+        title: Optional[str] = None,
     ):
         if interval < MIN_WATCH_INTERVAL_MINUTES:
             await interaction.response.send_message(
@@ -70,7 +72,7 @@ class Server(commands.Cog):
 
         resolved_host = resolve_host(interaction.guild_id, host) if interaction.guild_id else host
         status = await registry.get_status(resolved_host)
-        embed, icon_file = build_server_embed(resolved_host, status)
+        embed, icon_file = build_server_embed(resolved_host, status, title=title)
         content = build_aternos_notice() if status.is_aternos else None
 
         if icon_file:
@@ -86,6 +88,7 @@ class Server(commands.Cog):
             interval_mins=interval,
             ping_role_id=ping_role.id if ping_role else None,
             last_status="online" if status.online else "offline",
+            title=title,
         )
         watcher_storage.update_last_updated(message.id, datetime.datetime.now(datetime.timezone.utc).isoformat())
 
@@ -142,7 +145,7 @@ class Server(commands.Cog):
             return
 
         try:
-            embed, icon_file = build_server_embed(watcher["host"], status)
+            embed, icon_file = build_server_embed(watcher["host"], status, title=watcher["title"])
             # Editing a message can't swap its attachment via `file=`, so if the
             # icon changes shape this won't re-attach it - acceptable tradeoff
             # to avoid deleting/resending the message on every refresh.
