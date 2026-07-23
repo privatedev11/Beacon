@@ -1,0 +1,67 @@
+site_name: Beacon Documentation
+site_url: https://beacondocs.readthedocs.io
+repo_url: https://github.com/privatedev11/Beacon
+repo_name: privatedev11/Beacon
+site_description: Documentation for Beacon, a Discord bot to help with Minecraft servers.
+site_author: Beacondev
+copyright: Copyright (C) 2026 Beacondev
+edit_uri: blob/main/docs
+theme:
+  name: material
+  logo: assets/images/logo.png
+  favicon: assets/images/logo.png
+  features:
+    - navigation.footer
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.path
+    - toc.integrate
+    - search.suggest
+    - content.code.copy
+  palette: 
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    annotation: material/arrow-right-circle
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/privatedev11/Beacon
+      name: Beacon GitHub repository
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started: gettingstarted.md
+  - Commands: commands.md
+
+markdown_extensions:
+  - toc:
+      toc_depth: 4
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
