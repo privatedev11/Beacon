@@ -20,19 +20,19 @@ class Issues(commands.Cog):
         # Error handler to catch the cooldown and notify the user
         @issue.error
         async def issue_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
-        if isinstance(error, app_commands.CommandOnCooldown):
-                # Convert remaining seconds to minutes for a cleaner message
-                minutes_left = round(error.retry_after / 60)
-                        await interaction.response.send_message(
-                        f"You are opening issues too fast! Please try again in about {minutes_left} minutes.",
-                ephemeral=True
-                )
-        else:
-                # Fallback for other potential errors
-                await interaction.response.send_message(
-                        "An unexpected error occurred.",
-                        ephemeral=True
-                )
+            if isinstance(error, app_commands.CommandOnCooldown):
+                    # Convert remaining seconds to minutes for a cleaner message
+                    minutes_left = round(error.retry_after / 60)
+                    await interaction.response.send_message(
+                    f"You are opening issues too fast! Please try again in about {minutes_left} minutes. \nNeed to open more issues? Open one directly on the [GitHub](https://github.com/privatedev11/Beacon).",
+                    ephemeral=True
+                    )
+            else:
+                    # Fallback for other potential errors
+                    await interaction.response.send_message(
+                            "An unexpected error occurred.",
+                            ephemeral=True
+                    )
 
 async def setup(bot: commands.Bot):
         await bot.add_cog(Issues(bot))
