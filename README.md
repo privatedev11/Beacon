@@ -18,3 +18,5 @@ You will need to install the following pip packages:
 - pillow
 
 Make sure to invite the bot to your server and it should then work!
+
+You can view the full documentation for either running on Docker or manually setting it up on the [documentation page.](https://docs.beacondev.org/en/latest/gettingstarted/)
