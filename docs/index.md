@@ -20,3 +20,5 @@ There is not currently an official hosted instance as the bot is still in a pre-
 
 ## Support
 If you encounter problems or need help, you can go to the [GitHub repository](https://github.com/privatedev11/Beacon) for support!
+
+You can also send us an email at: [hello@beacondev.org](mailto:hello@beacondev.org)
