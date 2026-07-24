@@ -27,3 +27,8 @@ COLOR_ERROR = 15158332
 
 # --- Watcher settings ---
 MIN_WATCH_INTERVAL_MINUTES = 2  # floor, to avoid hitting rate limits
+
+# --- Host registry settings ---
+HOST_MIN_QUERY_INTERVAL_SECONDS = int(os.getenv("HOST_MIN_QUERY_INTERVAL_SECONDS", "60"))
+HOST_BACKOFF_BASE_SECONDS = int(os.getenv("HOST_BACKOFF_BASE_SECONDS", "60"))
+HOST_BACKOFF_MAX_SECONDS = int(os.getenv("HOST_BACKOFF_MAX_SECONDS", "1800"))

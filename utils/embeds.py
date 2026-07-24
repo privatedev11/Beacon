@@ -9,14 +9,17 @@ from config import COLOR_SERVER, COLOR_ERROR
 from services.mcstatus import ServerStatus
 
 
-def build_server_embed(host: str, status: ServerStatus) -> tuple[discord.Embed, Optional[discord.File]]:
-    if status.edition == "bedrock":
-        title="🟩 Minecraft Bedrock Server"
-    elif status.edition == "java":
-        title="🟦 Minecraft Java Server"
-    else:
-        title="Not a server?"
-    
+def build_server_embed(
+    host: str, status: ServerStatus, title: Optional[str] = None
+) -> tuple[discord.Embed, Optional[discord.File]]:
+    if not title:
+        if status.edition == "bedrock":
+            title = "🟩 Minecraft Bedrock Server"
+        elif status.edition == "java":
+            title = "🟦 Minecraft Java Server"
+        else:
+            title = "Not a server?"
+
     embed = discord.Embed(
         color=COLOR_SERVER,
         title=title,

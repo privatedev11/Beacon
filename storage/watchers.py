@@ -6,14 +6,23 @@ from typing import Optional
 from storage.db import get_connection
 
 
-def add_watcher(message_id: int, channel_id: int, guild_id: int, host: str, interval_mins: int) -> None:
+def add_watcher(
+    message_id: int,
+    channel_id: int,
+    guild_id: int,
+    host: str,
+    interval_mins: int,
+    ping_role_id: Optional[int] = None,
+    last_status: Optional[str] = None,
+    title: Optional[str] = None,
+) -> None:
     conn = get_connection()
     conn.execute(
         """
-        INSERT INTO watchers (message_id, channel_id, guild_id, host, interval_mins, last_updated)
-        VALUES (?, ?, ?, ?, ?, NULL)
+        INSERT INTO watchers (message_id, channel_id, guild_id, host, interval_mins, last_updated, ping_role_id, last_status, title)
+        VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?)
         """,
-        (message_id, channel_id, guild_id, host, interval_mins),
+        (message_id, channel_id, guild_id, host, interval_mins, ping_role_id, last_status, title),
     )
     conn.commit()
 
@@ -42,5 +51,14 @@ def update_last_updated(message_id: int, timestamp_iso: str) -> None:
     conn.execute(
         "UPDATE watchers SET last_updated = ? WHERE message_id = ?",
         (timestamp_iso, message_id),
+    )
+    conn.commit()
+
+
+def update_status_ping(message_id: int, status: str, ping_message_id: Optional[int]) -> None:
+    conn = get_connection()
+    conn.execute(
+        "UPDATE watchers SET last_status = ?, last_ping_message_id = ? WHERE message_id = ?",
+        (status, ping_message_id, message_id),
     )
     conn.commit()

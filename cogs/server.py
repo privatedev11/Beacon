@@ -3,13 +3,14 @@
 # same lookup, embed-building, and host-resolution logic.
 
 import datetime
+from typing import Optional
 
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
 from config import MIN_WATCH_INTERVAL_MINUTES
-from services.mcstatus import fetch_server_status
+from services.registry import registry
 from storage.hosts import resolve_host
 import storage.watchers as watcher_storage
 from utils.embeds import build_server_embed, build_error_embed, build_aternos_notice
@@ -33,7 +34,7 @@ class Server(commands.Cog):
         await interaction.response.defer()
 
         resolved_host = resolve_host(interaction.guild_id, host) if interaction.guild_id else host
-        status = await fetch_server_status(resolved_host)
+        status = await registry.get_status(resolved_host)
         embed, icon_file = build_server_embed(resolved_host, status)
 
         content = build_aternos_notice() if status.is_aternos else None
@@ -49,9 +50,18 @@ class Server(commands.Cog):
     @app_commands.describe(
         host="A server address, or a saved shorthand from /addhost",
         interval="How often to refresh, in minutes (minimum 2)",
+        ping_role="Role to mention when the server's online/offline status changes",
+        title="Custom title for the embed (defaults to the server edition)",
     )
     @app_commands.autocomplete(host=host_autocomplete)
-    async def watchserver(self, interaction: discord.Interaction, host: str, interval: int = 5):
+    async def watchserver(
+        self,
+        interaction: discord.Interaction,
+        host: str,
+        interval: int = 5,
+        ping_role: Optional[discord.Role] = None,
+        title: Optional[str] = None,
+    ):
         if interval < MIN_WATCH_INTERVAL_MINUTES:
             await interaction.response.send_message(
                 f"Interval must be at least {MIN_WATCH_INTERVAL_MINUTES} minutes.", ephemeral=True
@@ -61,8 +71,8 @@ class Server(commands.Cog):
         await interaction.response.defer()
 
         resolved_host = resolve_host(interaction.guild_id, host) if interaction.guild_id else host
-        status = await fetch_server_status(resolved_host)
-        embed, icon_file = build_server_embed(resolved_host, status)
+        status = await registry.get_status(resolved_host)
+        embed, icon_file = build_server_embed(resolved_host, status, title=title)
         content = build_aternos_notice() if status.is_aternos else None
 
         if icon_file:
@@ -76,6 +86,9 @@ class Server(commands.Cog):
             guild_id=interaction.guild_id,
             host=resolved_host,
             interval_mins=interval,
+            ping_role_id=ping_role.id if ping_role else None,
+            last_status="online" if status.online else "offline",
+            title=title,
         )
         watcher_storage.update_last_updated(message.id, datetime.datetime.now(datetime.timezone.utc).isoformat())
 
@@ -100,6 +113,7 @@ class Server(commands.Cog):
     async def refresh_watchers(self):
         now = datetime.datetime.now(datetime.timezone.utc)
 
+        due_watchers = []
         for watcher in watcher_storage.get_all_watchers():
             last_updated = watcher["last_updated"]
             due = True
@@ -107,17 +121,23 @@ class Server(commands.Cog):
                 elapsed_mins = (now - datetime.datetime.fromisoformat(last_updated)).total_seconds() / 60
                 due = elapsed_mins >= watcher["interval_mins"]
 
-            if not due:
-                continue
+            if due:
+                due_watchers.append(watcher)
 
-            await self._refresh_one(watcher)
+        watchers_by_host: dict[str, list[dict]] = {}
+        for watcher in due_watchers:
+            watchers_by_host.setdefault(watcher["host"], []).append(watcher)
 
-    async def _refresh_one(self, watcher: dict):
+        for host, watchers in watchers_by_host.items():
+            status = await registry.get_status(host)
+            for watcher in watchers:
+                await self._refresh_one(watcher, status)
+
+    async def _refresh_one(self, watcher: dict, status):
         try:
             channel = self.bot.get_channel(watcher["channel_id"]) or await self.bot.fetch_channel(watcher["channel_id"])
             message = await channel.fetch_message(watcher["message_id"])
         except discord.NotFound:
-            # The message or channel is gone - stop tracking it.
             watcher_storage.remove_watcher(watcher["message_id"])
             return
         except discord.HTTPException as e:
@@ -125,8 +145,7 @@ class Server(commands.Cog):
             return
 
         try:
-            status = await fetch_server_status(watcher["host"])
-            embed, icon_file = build_server_embed(watcher["host"], status)
+            embed, icon_file = build_server_embed(watcher["host"], status, title=watcher["title"])
             # Editing a message can't swap its attachment via `file=`, so if the
             # icon changes shape this won't re-attach it - acceptable tradeoff
             # to avoid deleting/resending the message on every refresh.
@@ -138,6 +157,33 @@ class Server(commands.Cog):
         watcher_storage.update_last_updated(
             watcher["message_id"], datetime.datetime.now(datetime.timezone.utc).isoformat()
         )
+
+        new_status = "online" if status.online else "offline"
+        if new_status != watcher["last_status"]:
+            await self._handle_status_change(watcher, message.channel, new_status)
+
+    async def _handle_status_change(self, watcher: dict, channel, new_status: str):
+        if watcher["ping_role_id"]:
+            old_ping_id = watcher["last_ping_message_id"]
+            if old_ping_id:
+                try:
+                    old_ping = await channel.fetch_message(old_ping_id)
+                    await old_ping.delete()
+                except discord.HTTPException:
+                    pass
+
+            try:
+                ping_message = await channel.send(
+                    f"<@&{watcher['ping_role_id']}> **{watcher['host']}** is now **{new_status}**."
+                )
+                new_ping_id = ping_message.id
+            except discord.HTTPException as e:
+                print(f"Failed to send status ping for watcher {watcher['message_id']}: {e}")
+                new_ping_id = watcher["last_ping_message_id"]
+        else:
+            new_ping_id = None
+
+        watcher_storage.update_status_ping(watcher["message_id"], new_status, new_ping_id)
 
     @refresh_watchers.before_loop
     async def before_refresh_watchers(self):
